@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -21,7 +20,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 
 	// Declare CLI inputs with default values
-	outputFilepath := flag.String("output-trustroot-filepath", "trustroot.yaml", "The name of the output TrustRoot file")
+	outputFilepath := flag.String("output-trustroot-filepath", "/tmp/trustroot.yaml", "The name of the output TrustRoot file")
 	templateFilePath := flag.String("template-filepath", "trustroot.template.yaml", "The path to the template file")
 	trustedRootPath := flag.String("trusted-root-path", "~/.sigstore/root/targets/trusted_root.json", "The path to the trusted_root.json file")
 	organization := flag.String("organization", "GitHub, Inc.", "The organization name")
@@ -47,6 +46,22 @@ func main() {
 	log.Printf("Common Name: %s", *commonName)
 	log.Printf("URI: %s", *uri)
 
+	// Clear the contents of the output file by truncating it
+	if err := os.Truncate(*outputFilepath, 0); err != nil {
+		if !os.IsNotExist(err) {
+			log.Fatalf("Error truncating output file: %v", err)
+		}
+		// If the file does not exist, create it
+		if _, err := os.Create(*outputFilepath); err != nil {
+			log.Fatalf("Error creating output file: %v", err)
+		}
+	}
+
+	// Copy the template file to the output file
+	if err := copyFile(*templateFilePath, *outputFilepath); err != nil {
+		log.Fatalf("Error copying template file: %v", err)
+	}
+
 	// Open the trusted_root.json file
 	file, err := os.Open(*trustedRootPath)
 	if err != nil {
@@ -58,21 +73,6 @@ func main() {
 	var trustedRoot map[string]interface{}
 	if err := json.NewDecoder(file).Decode(&trustedRoot); err != nil {
 		log.Fatalf("Error decoding trusted_root.json: %v", err)
-	}
-
-	// Extract the directory from the outputFilepath
-	outputDir := filepath.Dir(*outputFilepath)
-
-	// Create a temporary file in the same directory as the output file
-	tempFile, err := os.CreateTemp(outputDir, "trustroot-*.yaml")
-	if err != nil {
-		log.Fatalf("Error creating temporary file: %v", err)
-	}
-	defer os.Remove(tempFile.Name()) // Clean up the temporary file
-
-	// Copy the template file to the temporary file
-	if err := copyFile(*templateFilePath, tempFile.Name()); err != nil {
-		log.Fatalf("Error copying template file: %v", err)
 	}
 
 	// Iterate over "certificateAuthorities" and "timestampAuthorities"
@@ -138,21 +138,13 @@ func main() {
 			// Encode the full PEM chain to base64
 			certChain := base64.StdEncoding.EncodeToString([]byte(pemData.String()))
 
-			// Update the temporary YAML file using yaml.v3
-			if err := updateYAML(tempFile.Name(), authority, i, *organization, *commonName, *uri, certChain); err != nil {
+			// Update the output YAML file using yaml.v3
+			if err := updateYAML(*outputFilepath, authority, i, *organization, *commonName, *uri, certChain); err != nil {
 				log.Printf("Error updating YAML for %s[%d]: %v", authority, i, err)
 			}
 		}
 	}
 
-	// Write the final temporary file to the specified output file
-	finalContent, err := os.ReadFile(tempFile.Name())
-	if err != nil {
-		log.Fatalf("Error reading temporary file: %v", err)
-	}
-	if err := os.WriteFile(*outputFilepath, finalContent, 0644); err != nil {
-		log.Fatalf("Error writing to output file: %v", err)
-	}
 	log.Printf("Output written to %s", *outputFilepath)
 }
 
