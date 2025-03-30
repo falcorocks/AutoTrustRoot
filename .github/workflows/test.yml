@@ -35,7 +35,7 @@ jobs:
         uses: ./.github/actions/assemble-offline-trustroot
         with:
           output-trustroot-filename: trustroot.yaml
-          template-filename: /github/workspace/trustroot.template.yml
+          template-filename: /github/workspace/.github/actions/assemble-offline-trustroot/trustroot.template.yml
           trusted-root-path: /github/workspace/trusted_root.json
 
       - run: cat trustroot.yaml
