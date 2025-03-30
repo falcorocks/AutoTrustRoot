@@ -46,16 +46,12 @@ func main() {
 	log.Printf("Common Name: %s", *commonName)
 	log.Printf("URI: %s", *uri)
 
-	// Clear the contents of the output file by truncating it
-	if err := os.Truncate(*outputFilepath, 0); err != nil {
-		if !os.IsNotExist(err) {
-			log.Fatalf("Error truncating output file: %v", err)
-		}
-		// If the file does not exist, create it
-		if _, err := os.Create(*outputFilepath); err != nil {
-			log.Fatalf("Error creating output file: %v", err)
-		}
+	// Always create or truncate the output file
+	outputFile, err := os.Create(*outputFilepath)
+	if err != nil {
+		log.Fatalf("Error creating output file: %v", err)
 	}
+	outputFile.Close()
 
 	// Copy the template file to the output file
 	if err := copyFile(*templateFilePath, *outputFilepath); err != nil {
