@@ -27,14 +27,14 @@ jobs:
       - uses: sigstore/cosign-installer@v3.8.1
 
       - run: cosign initialize --root https://tuf-repo.github.com/5.root.json --mirror https://tuf-repo.github.com
-      - run: cat /home/runner/.sigstore/root/targets/trusted_root.json
+      - run: cp /home/runner/.sigstore/root/targets/trusted_root.json trusted_root.json
 
       - name: Run Assemble Offline TrustRoot Action
         uses: ./.github/actions/assemble-offline-trustroot
         with:
           output-trustroot-filename: trustroot.yaml
           template-filename: ${{ github.workspace }}/trustroot.template.yml
-          trusted-root-path: /home/runner/.sigstore/root/targets/trusted_root.json
+          trusted-root-path: ${{ github.workspace}}/trusted_root.json
 
       - run: cat trustroot.yaml
       # TODO: validate with policy-controller policy-tester

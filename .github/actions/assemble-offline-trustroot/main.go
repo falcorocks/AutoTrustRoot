@@ -18,8 +18,8 @@ func main() {
 
 	// Declare CLI inputs with default values
 	outputFilename := flag.String("output-trustroot-filename", "trustroot.yaml", "The name of the output TrustRoot file")
-	templateFilePath := flag.String("template-filename", "", "The path to the template file")
-	trustedRootPath := flag.String("trusted-root-path", "", "The path to the trusted_root.json file")
+	templateFilePath := flag.String("template-filename", "trustroot.template.yaml", "The path to the template file")
+	trustedRootPath := flag.String("trusted-root-path", "~/.sigstore/root/targets/trusted_root.json", "The path to the trusted_root.json file")
 	organization := flag.String("organization", "GitHub, Inc.", "The organization name")
 	commonName := flag.String("commonName", "Internal Services Root", "The common name")
 	uri := flag.String("uri", "https://fulcio.githubapp.com", "The URI")
