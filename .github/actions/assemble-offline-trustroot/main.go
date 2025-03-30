@@ -141,16 +141,12 @@ func main() {
 		}
 	}
 
-	// Write the final temporary file to the specified output file
+	// Read the final temporary file and print its content to stdout
 	finalContent, err := os.ReadFile(tempFile.Name())
 	if err != nil {
 		log.Fatalf("Error reading temporary file: %v", err)
 	}
-	if err := os.WriteFile(*outputFilepath, finalContent, 0644); err != nil {
-		log.Fatalf("Error writing to output file: %v", err)
-	}
-
-	log.Printf("Output written to %s", *outputFilepath)
+	fmt.Print(string(finalContent))
 }
 
 // copyFile copies a file from src to dst
