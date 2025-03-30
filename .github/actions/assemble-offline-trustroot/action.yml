@@ -2,16 +2,15 @@ name: "Assemble Offline TrustRoot"
 description: "A GitHub Action to download a TrustRoot for use in airgapped environments"
 author: "falcorocks"
 inputs:
-  example-input:
-    description: "An example input for the action."
-    required: false
-    default: "default-value"
-outputs:
-  example-output:
-    description: "An example output from the action."
+  output-trustroot-filename:
+    description: "The name of the TrustRoot file to be assembled."
+    required: true
+    default: "trustroot.yaml"
 runs:
   using: "docker"
   image: "Dockerfile"
+  args:
+    - ${{ inputs.output-trustroot-filename }}
 branding:
   icon: "package"
   color: "blue"

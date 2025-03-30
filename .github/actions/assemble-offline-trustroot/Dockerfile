@@ -6,4 +6,4 @@ RUN go build -o trustrootassembler
 FROM cgr.dev/chainguard/static:latest
 WORKDIR /app
 COPY --from=builder /app/trustrootassembler .
-CMD ["/app/trustrootassembler"]
+ENTRYPOINT ["/app/trustrootassembler"]
