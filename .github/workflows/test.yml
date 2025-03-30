@@ -33,7 +33,7 @@ jobs:
         with:
           output-trustroot-filename: trustroot.yaml
           template-filename: ${{ github.workspace }}/trustroot.template.yml
-          trusted-root-path: ${HOME}/.sigstore/root/targets/trusted_root.json
+          trusted-root-path: .sigstore/root/targets/trusted_root.json
 
       - run: cat trustroot.yaml
       # TODO: validate with policy-controller policy-tester
