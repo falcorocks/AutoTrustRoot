@@ -2,11 +2,11 @@ name: "Assemble Offline TrustRoot"
 description: "A GitHub Action to download a TrustRoot for use in airgapped environments"
 author: "falcorocks"
 inputs:
-  output-trustroot-filename:
+  output-trustroot-filepath:
     description: "The name of the TrustRoot file to be assembled."
     required: true
     default: "trustroot.yaml"
-  template-filename:
+  template-filepath:
     description: "The path to the template file."
     required: true
   trusted-root-path:
