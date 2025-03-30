@@ -29,6 +29,8 @@ jobs:
       - run: cosign initialize --root https://tuf-repo.github.com/5.root.json --mirror https://tuf-repo.github.com
       - run: cp /home/runner/.sigstore/root/targets/trusted_root.json trusted_root.json
 
+      - run: chmod 644 trusted_root.json
+
       - name: Run Assemble Offline TrustRoot Action
         uses: ./.github/actions/assemble-offline-trustroot
         with:
