@@ -16,14 +16,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - name: Checkout policy-controller repository
         uses: actions/checkout@v4
         with:
           repository: sigstore/policy-controller
           path: policy-controller
           fetch-depth: 1
+
       - uses: sigstore/cosign-installer@v3.8.1
+
       - run: cosign initialize --root https://tuf-repo.github.com/5.root.json --mirror https://tuf-repo.github.com
+
       - name: Run Assemble Offline TrustRoot Action
         uses: ./.github/actions/assemble-offline-trustroot
+        with:
+          output-trustroot-filename: trustroot.yaml
+        env:
+          HOME: ${{ runner.temp }}
+        # Mount the directory containing trusted_root.json
+          additional-mounts: |
+            ${{ runner.temp }}/.sigstore:/root/.sigstore
+
       - run: cat trustroot.yaml
+      # TODO: validate with policy-controller policy-tester
