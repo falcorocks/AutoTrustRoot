@@ -17,8 +17,9 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 
 	// Declare CLI inputs with default values
-	filename := flag.String("template-filename", "trustroot.template.yml", "The name of the template file")
 	outputFilename := flag.String("output-trustroot-filename", "trustroot.yaml", "The name of the output TrustRoot file")
+	templateFilePath := flag.String("template-filename", "", "The path to the template file")
+	trustedRootPath := flag.String("trusted-root-path", "", "The path to the trusted_root.json file")
 	organization := flag.String("organization", "GitHub, Inc.", "The organization name")
 	commonName := flag.String("commonName", "Internal Services Root", "The common name")
 	uri := flag.String("uri", "https://fulcio.githubapp.com", "The URI")
@@ -26,18 +27,24 @@ func main() {
 	// Parse the CLI flags
 	flag.Parse()
 
+	// Validate required inputs
+	if *templateFilePath == "" {
+		log.Fatalf("The --template-filename flag is required")
+	}
+	if *trustedRootPath == "" {
+		log.Fatalf("The --trusted-root-path flag is required")
+	}
+
 	// Log the values
-	log.Printf("Template Filename: %s", *filename)
+	log.Printf("Template File Path: %s", *templateFilePath)
+	log.Printf("Trusted Root Path: %s", *trustedRootPath)
 	log.Printf("Output Filename: %s", *outputFilename)
 	log.Printf("Organization: %s", *organization)
 	log.Printf("Common Name: %s", *commonName)
 	log.Printf("URI: %s", *uri)
 
-	// Path to the trusted_root.json file
-	trustedRootPath := os.ExpandEnv("$HOME/.sigstore/root/targets/trusted_root.json")
-
 	// Open the trusted_root.json file
-	file, err := os.Open(trustedRootPath)
+	file, err := os.Open(*trustedRootPath)
 	if err != nil {
 		log.Fatalf("Error opening trusted_root.json: %v", err)
 	}
@@ -57,7 +64,7 @@ func main() {
 	defer os.Remove(tempFile.Name()) // Clean up the temporary file
 
 	// Copy the template file to the temporary file
-	if err := copyFile(*filename, tempFile.Name()); err != nil {
+	if err := copyFile(*templateFilePath, tempFile.Name()); err != nil {
 		log.Fatalf("Error copying template file: %v", err)
 	}
 

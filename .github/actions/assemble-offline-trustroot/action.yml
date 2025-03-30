@@ -6,11 +6,19 @@ inputs:
     description: "The name of the TrustRoot file to be assembled."
     required: true
     default: "trustroot.yaml"
+  template-filename:
+    description: "The path to the template file."
+    required: true
+  trusted-root-path:
+    description: "The path to the trusted_root.json file."
+    required: true
 runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - ${{ inputs.output-trustroot-filename }}
+    - --output-trustroot-filename=${{ inputs.output-trustroot-filename }}
+    - --template-filename=${{ inputs.template-filename }}
+    - --trusted-root-path=${{ inputs.trusted-root-path }}
 branding:
   icon: "package"
   color: "blue"

@@ -32,11 +32,8 @@ jobs:
         uses: ./.github/actions/assemble-offline-trustroot
         with:
           output-trustroot-filename: trustroot.yaml
-        env:
-          HOME: ${{ runner.temp }}
-        # Mount the directory containing trusted_root.json
-          additional-mounts: |
-            ${{ runner.temp }}/.sigstore:/root/.sigstore
+          template-filename: ${{ github.workspace }}/trustroot.template.yml
+          trusted-root-path: ${{ runner.temp }}/.sigstore/root/targets/trusted_root.json
 
       - run: cat trustroot.yaml
       # TODO: validate with policy-controller policy-tester
