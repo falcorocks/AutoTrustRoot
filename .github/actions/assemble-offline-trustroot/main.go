@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -20,8 +21,8 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 
 	// Declare CLI inputs with default values
-	outputFilename := flag.String("output-trustroot-filename", "trustroot.yaml", "The name of the output TrustRoot file")
-	templateFilePath := flag.String("template-filename", "trustroot.template.yaml", "The path to the template file")
+	outputFilepath := flag.String("output-trustroot-filepath", "trustroot.yaml", "The name of the output TrustRoot file")
+	templateFilePath := flag.String("template-filepath", "trustroot.template.yaml", "The path to the template file")
 	trustedRootPath := flag.String("trusted-root-path", "~/.sigstore/root/targets/trusted_root.json", "The path to the trusted_root.json file")
 	organization := flag.String("organization", "GitHub, Inc.", "The organization name")
 	commonName := flag.String("commonName", "Internal Services Root", "The common name")
@@ -41,7 +42,7 @@ func main() {
 	// Log the values
 	log.Printf("Template File Path: %s", *templateFilePath)
 	log.Printf("Trusted Root Path: %s", *trustedRootPath)
-	log.Printf("Output Filename: %s", *outputFilename)
+	log.Printf("Output Filename: %s", *outputFilepath)
 	log.Printf("Organization: %s", *organization)
 	log.Printf("Common Name: %s", *commonName)
 	log.Printf("URI: %s", *uri)
@@ -59,8 +60,11 @@ func main() {
 		log.Fatalf("Error decoding trusted_root.json: %v", err)
 	}
 
-	// Create a temporary file for the YAML copy
-	tempFile, err := os.CreateTemp("", fmt.Sprintf("%s-*.yaml", *outputFilename))
+	// Extract the directory from the outputFilepath
+	outputDir := filepath.Dir(*outputFilepath)
+
+	// Create a temporary file in the same directory as the output file
+	tempFile, err := os.CreateTemp(outputDir, "trustroot-*.yaml")
 	if err != nil {
 		log.Fatalf("Error creating temporary file: %v", err)
 	}
@@ -146,10 +150,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error reading temporary file: %v", err)
 	}
-	if err := os.WriteFile(*outputFilename, finalContent, 0644); err != nil {
+	if err := os.WriteFile(*outputFilepath, finalContent, 0644); err != nil {
 		log.Fatalf("Error writing to output file: %v", err)
 	}
-	log.Printf("Output written to %s", *outputFilename)
+	log.Printf("Output written to %s", *outputFilepath)
 }
 
 // copyFile copies a file from src to dst
