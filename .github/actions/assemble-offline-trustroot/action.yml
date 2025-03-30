@@ -16,8 +16,8 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - --output-trustroot-filename=${{ inputs.output-trustroot-filename }}
-    - --template-filename=${{ inputs.template-filename }}
+    - --output-trustroot-filepath=${{ inputs.output-trustroot-filepath }}
+    - --template-filepath=${{ inputs.template-filepath }}
     - --trusted-root-path=${{ inputs.trusted-root-path }}
 branding:
   icon: "package"
