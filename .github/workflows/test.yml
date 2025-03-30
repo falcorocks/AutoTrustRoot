@@ -33,8 +33,8 @@ jobs:
         uses: ./.github/actions/assemble-offline-trustroot
         with:
           output-trustroot-filename: trustroot.yaml
-          template-filename: ${{ github.workspace }}/trustroot.template.yml
-          trusted-root-path: ${{ github.workspace}}/trusted_root.json
+          template-filename: /github/workspace/trustroot.template.yml
+          trusted-root-path: /github/workspace/trusted_root.json
 
       - run: cat trustroot.yaml
       # TODO: validate with policy-controller policy-tester
