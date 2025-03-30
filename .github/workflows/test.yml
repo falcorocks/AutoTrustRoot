@@ -34,9 +34,9 @@ jobs:
       - name: Run Assemble Offline TrustRoot Action
         uses: ./.github/actions/assemble-offline-trustroot
         with:
-          output-trustroot-filename: trustroot.yaml
+          output-trustroot-filename: /github/workspace/trustroot.yaml
           template-filename: /github/workspace/.github/actions/assemble-offline-trustroot/trustroot.template.yml
           trusted-root-path: /github/workspace/trusted_root.json
 
-      - run: cat trustroot.yaml
+      - run: cat ${{ github.workspace }}/trustroot.yaml
       # TODO: validate with policy-controller policy-tester
