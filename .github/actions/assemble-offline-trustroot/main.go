@@ -1,14 +1,17 @@
 package main
 
 import (
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -118,7 +121,7 @@ func main() {
 					continue
 				}
 
-				// Convert to PEM format using openssl
+				// Convert to PEM format using crypto/x509
 				pem, err := convertToPEM(decoded)
 				if err != nil {
 					log.Printf("Error converting to PEM for %s[%d][%d]: %v", authority, i, j, err)
@@ -131,8 +134,10 @@ func main() {
 			// Encode the full PEM chain to base64
 			certChain := base64.StdEncoding.EncodeToString([]byte(pemData.String()))
 
-			// Update the temporary YAML file using yq
-			updateYAML(tempFile.Name(), authority, i, *organization, *commonName, *uri, certChain)
+			// Update the temporary YAML file using yaml.v3
+			if err := updateYAML(tempFile.Name(), authority, i, *organization, *commonName, *uri, certChain); err != nil {
+				log.Printf("Error updating YAML for %s[%d]: %v", authority, i, err)
+			}
 		}
 	}
 
@@ -156,22 +161,89 @@ func copyFile(src, dst string) error {
 	return os.WriteFile(dst, input, 0644)
 }
 
-// convertToPEM converts raw certificate bytes to PEM format using openssl
+// convertToPEM converts raw certificate bytes to PEM format using the crypto/x509 package
 func convertToPEM(cert []byte) (string, error) {
-	cmd := exec.Command("openssl", "x509", "-inform", "DER", "-outform", "PEM")
-	cmd.Stdin = strings.NewReader(string(cert))
-	output, err := cmd.Output()
+	// Parse the certificate to ensure it's valid
+	_, err := x509.ParseCertificate(cert)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse certificate: %w", err)
 	}
-	return string(output), nil
+
+	// Encode the certificate in PEM format
+	pemBlock := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	}
+	var pemData strings.Builder
+	if err := pem.Encode(&pemData, pemBlock); err != nil {
+		return "", fmt.Errorf("failed to encode certificate to PEM: %w", err)
+	}
+
+	return pemData.String(), nil
 }
 
-// updateYAML updates the YAML file using yq
-func updateYAML(filename, authority string, index int, organization, commonName, uri, certChain string) {
-	exec.Command("yq", "eval", fmt.Sprintf(".spec.sigstoreKeys.%s[%d].subject = {}", authority, index), filename, "-i").Run()
-	exec.Command("yq", "eval", fmt.Sprintf(".spec.sigstoreKeys.%s[%d].subject.organization = \"%s\"", authority, index, organization), filename, "-i").Run()
-	exec.Command("yq", "eval", fmt.Sprintf(".spec.sigstoreKeys.%s[%d].subject.commonName = \"%s\"", authority, index, commonName), filename, "-i").Run()
-	exec.Command("yq", "eval", fmt.Sprintf(".spec.sigstoreKeys.%s[%d].uri = \"%s\"", authority, index, uri), filename, "-i").Run()
-	exec.Command("yq", "eval", fmt.Sprintf(".spec.sigstoreKeys.%s[%d].certChain = \"%s\"", authority, index, certChain), filename, "-i").Run()
+// updateYAML updates the YAML file directly using the yaml.v3 package
+func updateYAML(filename, authority string, index int, organization, commonName, uri, certChain string) error {
+	// Read the existing YAML file
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("failed to read YAML file: %w", err)
+	}
+
+	// Parse the YAML into a map
+	var root map[string]interface{}
+	if err := yaml.Unmarshal(data, &root); err != nil {
+		return fmt.Errorf("failed to parse YAML: %w", err)
+	}
+
+	// Navigate to the spec.sigstoreKeys section
+	spec, ok := root["spec"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("missing 'spec' section in YAML")
+	}
+
+	sigstoreKeys, ok := spec["sigstoreKeys"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("missing 'sigstoreKeys' section in YAML")
+	}
+
+	// Get or create the authority list
+	authorityList, ok := sigstoreKeys[authority].([]interface{})
+	if !ok {
+		authorityList = make([]interface{}, index+1)
+		sigstoreKeys[authority] = authorityList
+	}
+
+	// Ensure the list is large enough
+	for len(authorityList) <= index {
+		authorityList = append(authorityList, map[string]interface{}{})
+	}
+	sigstoreKeys[authority] = authorityList
+
+	// Update the specific authority entry
+	entry, ok := authorityList[index].(map[string]interface{})
+	if !ok {
+		entry = map[string]interface{}{}
+		authorityList[index] = entry
+	}
+
+	entry["subject"] = map[string]interface{}{
+		"organization": organization,
+		"commonName":   commonName,
+	}
+	entry["uri"] = uri
+	entry["certChain"] = certChain
+
+	// Marshal the updated YAML back to a string
+	updatedData, err := yaml.Marshal(root)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated YAML: %w", err)
+	}
+
+	// Write the updated YAML back to the file
+	if err := os.WriteFile(filename, updatedData, 0644); err != nil {
+		return fmt.Errorf("failed to write updated YAML file: %w", err)
+	}
+
+	return nil
 }
